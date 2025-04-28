@@ -5,3 +5,5 @@ reportlab==3.6.12
 python-dateutil==2.8.2
 openpyxl==3.0.10
 xlrd==2.0.1 
+streamlit
+reportlab

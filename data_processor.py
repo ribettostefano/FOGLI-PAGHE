@@ -3,13 +3,12 @@ import numpy as np
 from datetime import datetime, timedelta
 from utils import to_float, format_currency, calculate_period_dates
 
-def process_data(payroll_data, company_data, manual_date_info=None):
+def process_data(payroll_data, manual_date_info=None):
     """
-    Process and transform the payroll and company data.
+    Process and transform the payroll data.
     
     Args:
         payroll_data (pd.DataFrame): DataFrame containing raw payroll data
-        company_data (pd.DataFrame): DataFrame containing company list data
         manual_date_info (dict, optional): Dictionary with manually specified date information
         
     Returns:
@@ -18,15 +17,12 @@ def process_data(payroll_data, company_data, manual_date_info=None):
     try:
         # Clean column names (remove leading/trailing spaces and special characters)
         payroll_data.columns = payroll_data.columns.str.strip().str.replace('\n', ' ')
-        company_data.columns = company_data.columns.str.strip().str.replace('\n', ' ')
         
         # Print columns for debugging
         print("Payroll data columns:", payroll_data.columns.tolist())
-        print("Company data columns:", company_data.columns.tolist())
         
         # Make a copy to avoid modifying the original
         df = payroll_data.copy()
-        companies_df = company_data.copy()
         
         # Use manually specified date information if provided
         if manual_date_info:
@@ -166,71 +162,37 @@ def process_data(payroll_data, company_data, manual_date_info=None):
         selected_year = date_info['min_date'].year
         selected_month = date_info['min_date'].month
         
-        # Identifica le colonne nel file "lista aziende" (company_data)
-        cod_azienda_col = None
-        data_elab_col = None
+        # Usa la colonna "Consegna PDF" dal file principale
+        data_elab_col = df.columns.get_loc("Consegna PDF") if "Consegna PDF" in df.columns else None
         
-        # Cerca colonna "COD. AZIENDA" o simile nel file "lista aziende"
-        for i, colname in enumerate(companies_df.columns):
-            if 'cod' in colname.lower() and 'azienda' in colname.lower():
-                cod_azienda_col = i
-                break
-        
-        # Se non la troviamo, usa la prima colonna come default
-        if cod_azienda_col is None:
-            cod_azienda_col = 0
-        
-        # Cerca colonna "DATA ELABORAZIONE" o simile nel file "lista aziende"
-        for i, colname in enumerate(companies_df.columns):
-            if 'data' in colname.lower() and 'elabor' in colname.lower():
-                data_elab_col = i
-                break
-        
-        # Se non la troviamo, cerca anche solo "DATA"
         if data_elab_col is None:
-            for i, colname in enumerate(companies_df.columns):
-                if 'data' in colname.lower():
-                    data_elab_col = i
-                    break
-        
-        # Se ancora non la troviamo, usa la terza colonna come default
-        if data_elab_col is None:
-            data_elab_col = 2 if len(companies_df.columns) > 2 else 0
+            print("Colonna 'Consegna PDF' non trovata nel file")
         
         # Crea un dizionario per mappare il codice azienda alla data di elaborazione
         # Formato: {codice_azienda: {'giorno': giorno, 'stringa_data': data_formattata}}
         azienda_to_date_mapping = {}
         
-        # Stampa le colonne delle liste aziende per debug
-        print(f"Colonna codice azienda (indice {cod_azienda_col}): {companies_df.columns[cod_azienda_col]}")
-        print(f"Colonna data elaborazione (indice {data_elab_col}): {companies_df.columns[data_elab_col]}")
-        
-        # Estrai le informazioni dal file "lista aziende"
-        for idx, row in companies_df.iterrows():
-            if cod_azienda_col < len(row) and data_elab_col < len(row):
-                # Ottieni il codice azienda
-                try:
-                    cod_azienda = str(row.iloc[cod_azienda_col]).strip()
-                    # Ignora righe con codice azienda vuoto
-                    if not cod_azienda:
-                        continue
-                except:
+        # Estrai la data dalla colonna "Consegna PDF"
+        for idx, row in df.iterrows():
+            try:
+                cod_azienda = str(row['Codice']).strip()
+                if not cod_azienda:
                     continue
-                
-                # Ottieni il giorno dalla colonna C (DATA ELABORAZIONE)
-                data_val = row.iloc[data_elab_col]
+                    
+                # Ottieni la data dalla colonna "Consegna PDF"
+                data_val = row.get('Consegna PDF', None)
                 
                 # Stampa per debug
                 print(f"Riga {idx}: Codice azienda: '{cod_azienda}', Data val: '{data_val}'")
                 
-                # Se la data è vuota o non valida, usa 01/01/1900
-                if pd.isnull(data_val) or str(data_val).strip() == "":
+                # Se la data è vuota, 0 o non valida, usa 01/01/1900
+                if pd.isnull(data_val) or str(data_val).strip() == "" or str(data_val).strip() == "0":
                     azienda_to_date_mapping[cod_azienda] = {
                         'giorno': 1,
                         'data': datetime(1900, 1, 1),
                         'data_formattata': "01/01/1900"
                     }
-                    print(f"  - Data mancante per {cod_azienda}, usando 01/01/1900")
+                    print(f"  - Data mancante o zero per {cod_azienda}, usando 01/01/1900")
                     continue
                 
                 if pd.notnull(data_val):
@@ -327,7 +289,10 @@ def process_data(payroll_data, company_data, manual_date_info=None):
                         # Se la data non è valida, stampa l'errore e salta
                         print(f"  - Errore nella creazione della data: {str(e)}")
                         continue
-        
+            except Exception as e:
+                print(f"  - Errore nell'elaborazione della data: {str(e)}")
+                continue
+
         # Stampa il mapping per debug
         print(f"Mapping codice azienda -> data: {azienda_to_date_mapping}")
         

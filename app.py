@@ -113,8 +113,7 @@ with st.sidebar:
     st.markdown("""
     1. Seleziona il mese e l'anno di elaborazione
     2. Carica il file con i dati di paga (equivalente a 'incolla qui')
-    3. Carica il file con la lista delle aziende (equivalente a 'lista azienda')
-    4. Genera e scarica i PDF delle buste paga
+    3. Genera e scarica i PDF delle buste paga
     """)
     
     st.markdown(f"""
@@ -122,9 +121,6 @@ with st.sidebar:
         <h3 style='color: {primary_color}; margin-top: 0;'>Informazioni sui File</h3>
         <p style="font-size: 0.9rem;">
             <strong>File Dati Paga:</strong> Carica il tracciato di CL scaricabile dal campo (05>07>11). Questo file contiene i dati dei dipendenti e delle aziende.
-        </p>
-        <p style="font-size: 0.9rem;">
-            <strong>File Lista Aziende:</strong> Carica il file Excel con la lista delle aziende e la data di elaborazione. Questo file viene utilizzato per determinare le date corrette per ogni azienda.
         </p>
     </div>
     """, unsafe_allow_html=True)
@@ -159,37 +155,21 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-col1, col2 = st.columns(2)
+st.markdown(f"""
+    <div style="background-color: rgba(0, 122, 255, 0.05); padding: 1rem; border-radius: 5px; margin-bottom: 0.5rem;">
+        <p style="margin: 0; font-size: 0.9rem;">File dati paga (tracciato di CL scaricabile dal campo 05>07>11)</p>
+    </div>
+""", unsafe_allow_html=True)
+payroll_file = st.file_uploader("Seleziona file", type=["xlsx", "xls", "csv"], key="payroll", label_visibility="collapsed")
 
-with col1:
-    st.markdown(f"""
-        <div style="background-color: rgba(0, 122, 255, 0.05); padding: 1rem; border-radius: 5px; margin-bottom: 0.5rem;">
-            <p style="margin: 0; font-size: 0.9rem;">File dati paga (tracciato di CL scaricabile dal campo 05>07>11)</p>
-        </div>
-    """, unsafe_allow_html=True)
-    payroll_file = st.file_uploader("Seleziona file", type=["xlsx", "xls", "csv"], key="payroll", label_visibility="collapsed")
-
-with col2:
-    st.markdown(f"""
-        <div style="background-color: rgba(0, 122, 255, 0.05); padding: 1rem; border-radius: 5px; margin-bottom: 0.5rem;">
-            <p style="margin: 0; font-size: 0.9rem;">File lista aziende (Excel con lista aziende e data elaborazione)</p>
-        </div>
-    """, unsafe_allow_html=True)
-    company_file = st.file_uploader("Seleziona file", type=["xlsx", "xls", "csv"], key="company", label_visibility="collapsed")
-
-# Process files when both are uploaded
-if payroll_file and company_file:
+# Process file when uploaded
+if payroll_file:
     try:
-        # Read files based on their extension
+        # Read payroll file
         if payroll_file.name.endswith(('.xlsx', '.xls')):
             payroll_data = pd.read_excel(payroll_file)
         elif payroll_file.name.endswith('.csv'):
-            payroll_data = pd.read_csv(payroll_file, sep=None, engine='python')  # Auto-detect separator
-        
-        if company_file.name.endswith(('.xlsx', '.xls')):
-            company_data = pd.read_excel(company_file)
-        elif company_file.name.endswith('.csv'):
-            company_data = pd.read_csv(company_file, sep=None, engine='python')  # Auto-detect separator
+            payroll_data = pd.read_csv(payroll_file, sep=None, engine='python')
         
         # Create date_info dict based on selected period
         manual_date_info = {
@@ -202,7 +182,7 @@ if payroll_file and company_file:
         }
         
         # Process data with selected period info
-        processed_data, date_info = process_data(payroll_data, company_data, manual_date_info)
+        processed_data, date_info = process_data(payroll_data, manual_date_info)
         
         if processed_data is not None and not processed_data.empty:
             st.markdown(f"""
