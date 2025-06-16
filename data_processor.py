@@ -162,7 +162,7 @@ def process_data(payroll_data, manual_date_info=None):
         selected_year = date_info['min_date'].year
         selected_month = date_info['min_date'].month
         
-        # Usa la colonna "Consegna PDF" dal file principale
+        # Usa la colonna "Consegna" dal file principale
         data_elab_col = df.columns.get_loc("Consegna") if "Consegna" in df.columns else None
         
         if data_elab_col is None:
@@ -179,7 +179,7 @@ def process_data(payroll_data, manual_date_info=None):
                 if not cod_azienda:
                     continue
                     
-                # Ottieni la data dalla colonna "Consegna PDF"
+                # Ottieni la data dalla colonna "Consegna"
                 data_val = row.get('Consegna', None)
                 
                 # Stampa per debug
