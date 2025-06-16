@@ -163,16 +163,16 @@ def process_data(payroll_data, manual_date_info=None):
         selected_month = date_info['min_date'].month
         
         # Usa la colonna "Consegna PDF" dal file principale
-        data_elab_col = df.columns.get_loc("Consegna PDF") if "Consegna PDF" in df.columns else None
+        data_elab_col = df.columns.get_loc("Consegna") if "Consegna" in df.columns else None
         
         if data_elab_col is None:
-            print("Colonna 'Consegna PDF' non trovata nel file")
+            print("Colonna 'Consegna' non trovata nel file")
         
         # Crea un dizionario per mappare il codice azienda alla data di elaborazione
         # Formato: {codice_azienda: {'giorno': giorno, 'stringa_data': data_formattata}}
         azienda_to_date_mapping = {}
         
-        # Estrai la data dalla colonna "Consegna PDF"
+        # Estrai la data dalla colonna "Consegna"
         for idx, row in df.iterrows():
             try:
                 cod_azienda = str(row['Codice']).strip()
@@ -180,7 +180,7 @@ def process_data(payroll_data, manual_date_info=None):
                     continue
                     
                 # Ottieni la data dalla colonna "Consegna PDF"
-                data_val = row.get('Consegna PDF', None)
+                data_val = row.get('Consegna', None)
                 
                 # Stampa per debug
                 print(f"Riga {idx}: Codice azienda: '{cod_azienda}', Data val: '{data_val}'")
